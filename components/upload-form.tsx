@@ -25,6 +25,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { cn } from "@/lib/utils"
 import { processVoice, synthesizeSpeech } from "@/lib/api"
 import { useTheme } from "next-themes"
+import { motion, AnimatePresence } from "framer-motion"
 
 export default function UploadForm() {
   const [file, setFile] = useState<File | null>(null)
@@ -259,202 +260,330 @@ export default function UploadForm() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <Card className="overflow-hidden border-2 shadow-lg transition-all hover:shadow-xl dark:bg-card/95 backdrop-blur-sm animate-scale-in relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 pointer-events-none"></div>
-        <CardContent className="p-6 sm:p-8 relative z-10">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label htmlFor="prompt" className="text-sm font-medium flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary animate-pulse-custom" />
-                <span>Prompt (Optional)</span>
-              </label>
-              <Textarea
-                id="prompt"
-                placeholder="Enter a prompt for the AI (e.g., 'Summarize this audio' or 'Answer the question in the recording')"
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                className="min-h-[80px] resize-none transition-all focus:ring-2 focus:ring-primary/50 focus:border-primary bg-card/50 backdrop-blur-sm"
-                disabled={isProcessing}
-              />
-            </div>
-
-            <div className="flex flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed p-6 sm:p-8 transition-all hover:border-primary/50 group bg-card/50 backdrop-blur-sm">
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                accept="audio/*"
-                className="hidden"
-                disabled={isProcessing || isRecording}
-              />
-
-              {file ? (
-                <div className="text-center animate-fade-in">
-                  <div className="flex items-center justify-center rounded-full bg-primary/10 p-4 mb-3 mx-auto w-fit group-hover:scale-110 transition-transform animate-pulse-custom">
-                    <FileAudio className="h-8 w-8 text-primary" />
-                  </div>
-                  <p className="font-medium text-lg">{file.name}</p>
-                  <p className="text-sm text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                  <div className="mt-2 flex items-center justify-center">
-                    <span className="inline-flex items-center rounded-full bg-green-100 dark:bg-green-900/30 px-3 py-1 text-xs font-medium text-green-800 dark:text-green-300">
-                      <CheckCircle2 className="mr-1 h-3 w-3" />
-                      Ready to process
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center">
-                  <div className="flex items-center justify-center rounded-full bg-primary/10 p-4 mb-3 mx-auto w-fit group-hover:scale-110 transition-transform animate-float">
-                    <Upload className="h-8 w-8 text-primary" />
-                  </div>
-                  <p className="font-medium text-lg">Upload or Record Audio</p>
-                  <p className="text-sm text-muted-foreground">MP3, WAV, or M4A up to 10MB</p>
-                </div>
-              )}
-
-              <div className="flex flex-wrap gap-3 justify-center mt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleUploadClick}
-                  disabled={isProcessing || isRecording}
-                  className="flex items-center gap-2 transition-all hover:bg-primary hover:text-primary-foreground button-hover"
-                >
-                  <Upload className="h-4 w-4" />
-                  Upload File
-                </Button>
-
-                <Button
-                  type="button"
-                  variant={isRecording ? "destructive" : "outline"}
-                  onClick={isRecording ? stopRecording : startRecording}
-                  disabled={isProcessing}
-                  className={cn(
-                    "flex items-center gap-2 transition-all button-hover",
-                    isRecording ? "animate-pulse-custom" : "hover:bg-primary hover:text-primary-foreground",
-                  )}
-                >
-                  <Mic className={cn("h-4 w-4", isRecording && "animate-pulse")} />
-                  {isRecording ? `Stop Recording (${formatTime(recordingTime)})` : "Record Audio"}
-                </Button>
-              </div>
-            </div>
-
-            {progress > 0 && progress < 100 && (
-              <div className="space-y-2 animate-fade-in">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="flex items-center">
-                    <Wand2 className="h-4 w-4 mr-2 animate-spin-custom" />
-                    Processing...
-                  </span>
-                  <span>{progress}%</span>
-                </div>
-                <Progress value={progress} className="h-2 transition-all bg-muted/50">
-                  <div className="h-full bg-gradient-to-r from-[#0e3b62] to-[#29a3d6] animate-gradient rounded-full"></div>
-                </Progress>
-              </div>
-            )}
-
-            <div className="flex flex-wrap gap-3 justify-center">
-              <Button
-                type="submit"
-                disabled={!file || isProcessing || isRecording}
-                className="w-full sm:w-auto flex items-center gap-2 bg-gradient-to-r from-[#0e3b62] via-[#1a6b9e] to-[#29a3d6] hover:opacity-90 transition-opacity animate-gradient button-hover"
+    <motion.div
+      className="mx-auto max-w-3xl"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
+      >
+        <Card className="overflow-hidden border-2 shadow-lg transition-all hover:shadow-xl dark:bg-card/95 backdrop-blur-sm relative">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 pointer-events-none"></div>
+          <CardContent className="p-6 sm:p-8 relative z-10">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <motion.div
+                className="space-y-2"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
               >
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin-custom" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <Wand2 className="h-4 w-4" />
-                    Process Voice
-                  </>
-                )}
-              </Button>
+                <label htmlFor="prompt" className="text-sm font-medium flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary animate-pulse-custom" />
+                  <span>Prompt (Optional)</span>
+                </label>
+                <Textarea
+                  id="prompt"
+                  placeholder="Enter a prompt for the AI (e.g., 'Summarize this audio' or 'Answer the question in the recording')"
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  className="min-h-[80px] resize-none transition-all focus:ring-2 focus:ring-primary/50 focus:border-primary bg-card/50 backdrop-blur-sm"
+                  disabled={isProcessing}
+                />
+              </motion.div>
 
-              {(file || textResponse || audioResponse) && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={resetForm}
+              <motion.div
+                className="flex flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed p-6 sm:p-8 transition-all hover:border-primary/50 group bg-card/50 backdrop-blur-sm"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.2 }}
+                whileHover={{ boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)" }}
+              >
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept="audio/*"
+                  className="hidden"
                   disabled={isProcessing || isRecording}
-                  className="w-full sm:w-auto flex items-center gap-2 transition-all hover:bg-destructive hover:text-destructive-foreground button-hover"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  Reset
-                </Button>
-              )}
-            </div>
-          </form>
+                />
 
-          {textResponse && (
-            <div
-              className="mt-8 space-y-4 animate-fade-up opacity-0"
-              style={{ animationDelay: "0.1s", animationFillMode: "forwards" }}
-            >
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary animate-pulse-custom" />
-                AI Response
-              </h3>
-              <div className="rounded-lg border bg-card/50 backdrop-blur-sm p-5 shadow-inner transition-all hover:shadow-md relative overflow-hidden group">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-                <p className="whitespace-pre-wrap relative z-10">{textResponse}</p>
-              </div>
-            </div>
-          )}
-
-          {audioResponse && (
-            <div
-              className="mt-6 space-y-4 animate-fade-up opacity-0"
-              style={{ animationDelay: "0.2s", animationFillMode: "forwards" }}
-            >
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Volume2 className="h-4 w-4 text-primary animate-pulse-custom" />
-                Voice Response
-              </h3>
-              <div className="flex flex-col gap-4 rounded-lg border bg-card/50 backdrop-blur-sm p-5 shadow-inner transition-all hover:shadow-md relative overflow-hidden group">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-                <div className="flex items-center gap-4 relative z-10">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={togglePlayback}
-                    className="h-14 w-14 rounded-full transition-transform hover:scale-105 bg-primary/10 hover:bg-primary hover:text-primary-foreground button-hover"
-                  >
-                    {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
-                  </Button>
-                  <span className="text-sm font-medium">{isPlaying ? "Playing audio..." : "Click to play"}</span>
-                  <audio ref={audioRef} src={audioResponse} onEnded={handleAudioEnded} className="hidden" />
-                </div>
-
-                {/* Audio visualization */}
-                <div className="h-16 w-full flex items-center justify-center gap-[2px] p-2 bg-muted/30 rounded-lg overflow-hidden">
-                  {isPlaying ? (
-                    audioVisualization.map((height, index) => (
-                      <div
-                        key={index}
-                        className="w-1.5 bg-gradient-to-t from-primary/40 to-primary rounded-full transition-all duration-75"
-                        style={{
-                          height: `${height}%`,
-                          opacity: theme === "dark" ? 0.9 : 0.8,
+                <AnimatePresence mode="wait">
+                  {file ? (
+                    <motion.div
+                      key="file-selected"
+                      className="text-center"
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.8, opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <motion.div
+                        className="flex items-center justify-center rounded-full bg-primary/10 p-4 mb-3 mx-auto w-fit group-hover:scale-110 transition-transform"
+                        animate={{
+                          boxShadow: [
+                            "0px 0px 0px rgba(0,0,0,0)",
+                            "0px 0px 20px rgba(var(--primary), 0.3)",
+                            "0px 0px 0px rgba(0,0,0,0)",
+                          ],
                         }}
-                      />
-                    ))
+                        transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+                      >
+                        <FileAudio className="h-8 w-8 text-primary" />
+                      </motion.div>
+                      <p className="font-medium text-lg">{file.name}</p>
+                      <p className="text-sm text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                      <motion.div
+                        className="mt-2 flex items-center justify-center"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                      >
+                        <span className="inline-flex items-center rounded-full bg-green-100 dark:bg-green-900/30 px-3 py-1 text-xs font-medium text-green-800 dark:text-green-300">
+                          <CheckCircle2 className="mr-1 h-3 w-3" />
+                          Ready to process
+                        </span>
+                      </motion.div>
+                    </motion.div>
                   ) : (
-                    <div className="text-sm text-muted-foreground">Audio visualization will appear during playback</div>
+                    <motion.div
+                      key="upload-prompt"
+                      className="text-center"
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.8, opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <motion.div
+                        className="flex items-center justify-center rounded-full bg-primary/10 p-4 mb-3 mx-auto w-fit group-hover:scale-110 transition-transform"
+                        animate={{ y: [0, -10, 0] }}
+                        transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, repeatType: "reverse" }}
+                      >
+                        <Upload className="h-8 w-8 text-primary" />
+                      </motion.div>
+                      <p className="font-medium text-lg">Upload or Record Audio</p>
+                      <p className="text-sm text-muted-foreground">MP3, WAV, or M4A up to 10MB</p>
+                    </motion.div>
                   )}
-                </div>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                </AnimatePresence>
+
+                <motion.div
+                  className="flex flex-wrap gap-3 justify-center mt-2"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.3 }}
+                >
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleUploadClick}
+                      disabled={isProcessing || isRecording}
+                      className="flex items-center gap-2 transition-all hover:bg-primary hover:text-primary-foreground button-hover"
+                    >
+                      <Upload className="h-4 w-4" />
+                      Upload File
+                    </Button>
+                  </motion.div>
+
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button
+                      type="button"
+                      variant={isRecording ? "destructive" : "outline"}
+                      onClick={isRecording ? stopRecording : startRecording}
+                      disabled={isProcessing}
+                      className={cn(
+                        "flex items-center gap-2 transition-all button-hover",
+                        isRecording ? "animate-pulse-custom" : "hover:bg-primary hover:text-primary-foreground",
+                      )}
+                    >
+                      <Mic className={cn("h-4 w-4", isRecording && "animate-pulse")} />
+                      {isRecording ? `Stop Recording (${formatTime(recordingTime)})` : "Record Audio"}
+                    </Button>
+                  </motion.div>
+                </motion.div>
+              </motion.div>
+
+              <AnimatePresence>
+                {progress > 0 && progress < 100 && (
+                  <motion.div
+                    className="space-y-2"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center">
+                        <Wand2 className="h-4 w-4 mr-2 animate-spin-custom" />
+                        Processing...
+                      </span>
+                      <span>{progress}%</span>
+                    </div>
+                    <Progress value={progress} className="h-2 transition-all bg-muted/50">
+                      <motion.div
+                        className="h-full bg-gradient-to-r from-[#0e3b62] to-[#29a3d6] rounded-full"
+                        animate={{
+                          backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+                        }}
+                        transition={{ duration: 3, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                        style={{ backgroundSize: "200% 200%" }}
+                      />
+                    </Progress>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <motion.div
+                className="flex flex-wrap gap-3 justify-center"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.4 }}
+              >
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button
+                    type="submit"
+                    disabled={!file || isProcessing || isRecording}
+                    className="w-full sm:w-auto flex items-center gap-2 bg-gradient-to-r from-[#0e3b62] via-[#1a6b9e] to-[#29a3d6] hover:opacity-90 transition-opacity button-hover"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin-custom" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Wand2 className="h-4 w-4" />
+                        Process Voice
+                      </>
+                    )}
+                  </Button>
+                </motion.div>
+
+                {(file || textResponse || audioResponse) && (
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={resetForm}
+                      disabled={isProcessing || isRecording}
+                      className="w-full sm:w-auto flex items-center gap-2 transition-all hover:bg-destructive hover:text-destructive-foreground button-hover"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      Reset
+                    </Button>
+                  </motion.div>
+                )}
+              </motion.div>
+            </form>
+
+            <AnimatePresence>
+              {textResponse && (
+                <motion.div
+                  className="mt-8 space-y-4"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-primary animate-pulse-custom" />
+                    AI Response
+                  </h3>
+                  <motion.div
+                    className="rounded-lg border bg-card/50 backdrop-blur-sm p-5 shadow-inner transition-all hover:shadow-md relative overflow-hidden group"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.1 }}
+                    whileHover={{
+                      boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                    <p className="whitespace-pre-wrap relative z-10">{textResponse}</p>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+              {audioResponse && (
+                <motion.div
+                  className="mt-6 space-y-4"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                >
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <Volume2 className="h-4 w-4 text-primary animate-pulse-custom" />
+                    Voice Response
+                  </h3>
+                  <motion.div
+                    className="flex flex-col gap-4 rounded-lg border bg-card/50 backdrop-blur-sm p-5 shadow-inner transition-all hover:shadow-md relative overflow-hidden group"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.3 }}
+                    whileHover={{
+                      boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                    <div className="flex items-center gap-4 relative z-10">
+                      <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          onClick={togglePlayback}
+                          className="h-14 w-14 rounded-full transition-transform hover:scale-105 bg-primary/10 hover:bg-primary hover:text-primary-foreground button-hover"
+                        >
+                          {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
+                        </Button>
+                      </motion.div>
+                      <span className="text-sm font-medium">{isPlaying ? "Playing audio..." : "Click to play"}</span>
+                      <audio ref={audioRef} src={audioResponse} onEnded={handleAudioEnded} className="hidden" />
+                    </div>
+
+                    {/* Audio visualization */}
+                    <div className="h-16 w-full flex items-center justify-center gap-[2px] p-2 bg-muted/30 rounded-lg overflow-hidden">
+                      {isPlaying ? (
+                        audioVisualization.map((height, index) => (
+                          <motion.div
+                            key={index}
+                            className="w-1.5 bg-gradient-to-t from-primary/40 to-primary rounded-full"
+                            initial={{ height: "10%" }}
+                            animate={{ height: `${height}%` }}
+                            transition={{ duration: 0.2 }}
+                            style={{
+                              opacity: theme === "dark" ? 0.9 : 0.8,
+                            }}
+                          />
+                        ))
+                      ) : (
+                        <div className="text-sm text-muted-foreground">
+                          Audio visualization will appear during playback
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </CardContent>
+        </Card>
+      </motion.div>
       <Toaster />
-    </div>
+    </motion.div>
   )
 }
 

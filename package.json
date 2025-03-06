@@ -48,6 +48,7 @@
     "dotenv": "latest",
     "embla-carousel-react": "8.5.1",
     "express": "latest",
+    "framer-motion": "^12.4.10",
     "fs": "latest",
     "input-otp": "1.4.1",
     "lucide-react": "^0.454.0",
