@@ -232,6 +232,3 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [shadcn/ui](https://ui.shadcn.com/)  
 - [Framer Motion](https://www.framer.com/motion/)  
 
----
-
-Made with ❤️ by [Your Name]
