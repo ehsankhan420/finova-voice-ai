@@ -166,7 +166,7 @@ export default function Home() {
               </div>
               <h3 className="text-xl font-bold group-hover:text-primary transition-colors">AI Processing</h3>
               <p className="mt-2 text-muted-foreground">
-                Powered by Google's Gemini 1.5 Flash for accurate voice-to-text conversion.
+                Powered by AI for accurate voice-to-text conversion.
               </p>
             </motion.div>
 
@@ -184,7 +184,7 @@ export default function Home() {
               </div>
               <h3 className="text-xl font-bold group-hover:text-primary transition-colors">Voice Synthesis</h3>
               <p className="mt-2 text-muted-foreground">
-                Convert AI responses back to natural-sounding speech with ElevenLabs.
+                Convert AI responses back to natural-sounding speech.
               </p>
             </motion.div>
           </div>
@@ -278,7 +278,7 @@ export default function Home() {
                 >
                   <h3 className="text-xl font-bold">AI Processing</h3>
                   <p className="mt-2 text-muted-foreground">
-                    Gemini 1.5 Flash processes your voice and generates a text response.
+                    AI processes your voice and generates a text response.
                   </p>
                 </motion.div>
               </motion.div>
@@ -346,7 +346,7 @@ export default function Home() {
                 >
                   <h3 className="text-xl font-bold">Voice Synthesis</h3>
                   <p className="mt-2 text-muted-foreground">
-                    Convert the text response back to natural speech using ElevenLabs.
+                    Convert the text response back to natural speech.
                   </p>
                 </motion.div>
               </motion.div>
