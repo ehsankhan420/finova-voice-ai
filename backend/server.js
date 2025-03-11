@@ -1,5 +1,4 @@
 import express from "express"
-import mongoose from "mongoose"
 import cors from "cors"
 import dotenv from "dotenv"
 import multer from "multer"
@@ -8,7 +7,6 @@ import path from "path"
 import fs from "fs"
 import { v4 as uuidv4 } from "uuid"
 import fetch from "node-fetch"
-import VoiceRequest from "./models/voiceRequest.js"
 
 // Configuration
 dotenv.config()
@@ -44,11 +42,8 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
 })
 
-// Connect to MongoDB
-mongoose
-  .connect(process.env.MONGODB_URI)
-  .then(() => console.log("Connected to MongoDB"))
-  .catch((err) => console.error("MongoDB connection error:", err))
+// In-memory storage for voice requests (replacing MongoDB)
+const voiceRequests = [];
 
 // Routes
 app.get("/", (req, res) => {
@@ -116,19 +111,22 @@ app.post("/api/process-voice", upload.single("file"), async (req, res) => {
     // Extract text from Gemini response
     const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated"
 
-    // Save the request to MongoDB
-    const voiceRequest = new VoiceRequest({
+    // Save the request to in-memory storage
+    const requestId = uuidv4();
+    const voiceRequest = {
+      _id: requestId,
       originalFilename: req.file.originalname,
       storedFilename: req.file.filename,
       prompt: prompt,
       response: text,
       mimeType: req.file.mimetype,
       fileSize: req.file.size,
-    })
+      createdAt: new Date(),
+    }
 
-    await voiceRequest.save()
+    voiceRequests.push(voiceRequest);
 
-    return res.json({ text, requestId: voiceRequest._id })
+    return res.json({ text, requestId })
   } catch (error) {
     console.error("Error processing voice:", error)
     return res.status(500).json({ error: "Failed to process voice" })
@@ -177,11 +175,12 @@ app.post("/api/synthesize-speech", async (req, res) => {
     const audioPath = path.join(uploadsDir, audioFilename)
     fs.writeFileSync(audioPath, Buffer.from(audioBuffer))
 
-    // Update the MongoDB document if requestId is provided
+    // Update the in-memory storage if requestId is provided
     if (requestId) {
-      await VoiceRequest.findByIdAndUpdate(requestId, {
-        audioFilename: audioFilename,
-      })
+      const requestIndex = voiceRequests.findIndex(req => req._id === requestId);
+      if (requestIndex !== -1) {
+        voiceRequests[requestIndex].audioFilename = audioFilename;
+      }
     }
 
     // Return the audio file path
@@ -199,7 +198,11 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")))
 // Get history of voice requests
 app.get("/api/history", async (req, res) => {
   try {
-    const history = await VoiceRequest.find().sort({ createdAt: -1 }).limit(20)
+    // Return the in-memory storage, sorted by createdAt in descending order
+    const history = [...voiceRequests].sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    ).slice(0, 20);
+    
     return res.json(history)
   } catch (error) {
     console.error("Error fetching history:", error)
@@ -211,4 +214,3 @@ app.get("/api/history", async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
-

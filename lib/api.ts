@@ -1,6 +1,6 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
 
-export async function processVoice(formData) {
+export async function processVoice(formData: FormData): Promise<any> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/process-voice`, {
       method: "POST",
@@ -18,7 +18,7 @@ export async function processVoice(formData) {
   }
 }
 
-export async function synthesizeSpeech(text, requestId) {
+export async function synthesizeSpeech(text: string, requestId: string): Promise<any> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/synthesize-speech`, {
       method: "POST",
