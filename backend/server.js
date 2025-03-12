@@ -43,7 +43,7 @@ const upload = multer({
 })
 
 // In-memory storage for voice requests (replacing MongoDB)
-const voiceRequests = [];
+const voiceRequests = []
 
 // Routes
 app.get("/", (req, res) => {
@@ -112,7 +112,7 @@ app.post("/api/process-voice", upload.single("file"), async (req, res) => {
     const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated"
 
     // Save the request to in-memory storage
-    const requestId = uuidv4();
+    const requestId = uuidv4()
     const voiceRequest = {
       _id: requestId,
       originalFilename: req.file.originalname,
@@ -124,7 +124,7 @@ app.post("/api/process-voice", upload.single("file"), async (req, res) => {
       createdAt: new Date(),
     }
 
-    voiceRequests.push(voiceRequest);
+    voiceRequests.push(voiceRequest)
 
     return res.json({ text, requestId })
   } catch (error) {
@@ -177,9 +177,9 @@ app.post("/api/synthesize-speech", async (req, res) => {
 
     // Update the in-memory storage if requestId is provided
     if (requestId) {
-      const requestIndex = voiceRequests.findIndex(req => req._id === requestId);
+      const requestIndex = voiceRequests.findIndex((req) => req._id === requestId)
       if (requestIndex !== -1) {
-        voiceRequests[requestIndex].audioFilename = audioFilename;
+        voiceRequests[requestIndex].audioFilename = audioFilename
       }
     }
 
@@ -199,10 +199,10 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")))
 app.get("/api/history", async (req, res) => {
   try {
     // Return the in-memory storage, sorted by createdAt in descending order
-    const history = [...voiceRequests].sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    ).slice(0, 20);
-    
+    const history = [...voiceRequests]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 20)
+
     return res.json(history)
   } catch (error) {
     console.error("Error fetching history:", error)
@@ -210,7 +210,154 @@ app.get("/api/history", async (req, res) => {
   }
 })
 
+// Ultravox API proxy endpoints
+app.get("/api/ultravox-status", async (req, res) => {
+  try {
+    const apiKey = process.env.ULTRAVOX_API_KEY
+
+    if (!apiKey) {
+      return res.status(500).json({ error: "Ultravox API key not configured" })
+    }
+
+    // Check Ultravox API status
+    const response = await fetch("https://api.ultravox.ai/status", {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+    })
+
+    if (!response.ok) {
+      return res.status(response.status).json({ error: "Ultravox API is not available" })
+    }
+
+    const data = await response.json()
+    return res.json(data)
+  } catch (error) {
+    console.error("Error checking Ultravox API status:", error)
+    return res.status(500).json({ error: "Failed to check Ultravox API status" })
+  }
+})
+
+app.get("/api/ultravox-voices", async (req, res) => {
+  try {
+    const apiKey = process.env.ULTRAVOX_API_KEY
+
+    if (!apiKey) {
+      return res.status(500).json({ error: "Ultravox API key not configured" })
+    }
+
+    // Fetch available voices from Ultravox API
+    const response = await fetch("https://api.ultravox.ai/voices", {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+    })
+
+    if (!response.ok) {
+      return res.status(response.status).json({ error: "Failed to fetch voices from Ultravox API" })
+    }
+
+    const data = await response.json()
+    return res.json(data)
+  } catch (error) {
+    console.error("Error fetching Ultravox voices:", error)
+    return res.status(500).json({ error: "Failed to fetch Ultravox voices" })
+  }
+})
+
+app.post("/api/ultravox-call", async (req, res) => {
+  try {
+    const apiKey = process.env.ULTRAVOX_API_KEY
+
+    if (!apiKey) {
+      return res.status(500).json({ error: "Ultravox API key not configured" })
+    }
+
+    const { action, voiceId, sessionId } = req.body
+
+    // Handle different call actions
+    switch (action) {
+      case "start":
+        // Initialize a call session with Ultravox API
+        const startResponse = await fetch("https://api.ultravox.ai/calls", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            voice: voiceId || "mark",
+            settings: {
+              prompt:
+                "You are a helpful FINOVA voice assistant. Collect information about the user including their name, email, organization, and use case.",
+            },
+          }),
+        })
+
+        if (!startResponse.ok) {
+          const errorData = await startResponse.json()
+          return res.status(startResponse.status).json({
+            error: "Failed to start Ultravox call",
+            details: errorData,
+          })
+        }
+
+        const startData = await startResponse.json()
+        return res.json(startData)
+
+      case "end":
+        // End an active call session
+        if (!sessionId) {
+          return res.status(400).json({ error: "Session ID is required" })
+        }
+
+        const endResponse = await fetch(`https://api.ultravox.ai/calls/${sessionId}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+        })
+
+        if (!endResponse.ok) {
+          const errorData = await endResponse.json()
+          return res.status(endResponse.status).json({
+            error: "Failed to end Ultravox call",
+            details: errorData,
+          })
+        }
+
+        return res.json({ success: true })
+
+      default:
+        return res.status(400).json({ error: "Invalid action" })
+    }
+  } catch (error) {
+    console.error("Error in Ultravox call API route:", error)
+    return res.status(500).json({ error: "Internal server error" })
+  }
+})
+
+app.get("/api/ultravox-token", (req, res) => {
+  try {
+    const apiKey = process.env.ULTRAVOX_API_KEY
+
+    if (!apiKey) {
+      return res.status(500).json({ error: "Ultravox API key not configured" })
+    }
+
+    // Return the API key (in a real production app, you might want to generate a temporary token instead)
+    return res.json({ apiKey })
+  } catch (error) {
+    console.error("Error in Ultravox token API route:", error)
+    return res.status(500).json({ error: "Internal server error" })
+  }
+})
+
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
+

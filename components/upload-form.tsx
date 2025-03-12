@@ -15,6 +15,7 @@ import {
   Wand2,
   FileAudio,
   CheckCircle2,
+  Phone,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -26,8 +27,10 @@ import { cn } from "@/lib/utils"
 import { processVoice, synthesizeSpeech } from "@/lib/api"
 import { useTheme } from "next-themes"
 import { motion, AnimatePresence } from "framer-motion"
+import { useRouter } from "next/navigation"
 
 export default function UploadForm() {
+  const router = useRouter()
   const [file, setFile] = useState<File | null>(null)
   const [isRecording, setIsRecording] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
@@ -259,6 +262,10 @@ export default function UploadForm() {
     })
   }
 
+  const handleStartCall = () => {
+    router.push("/voice-call")
+  }
+
   return (
     <motion.div
       className="mx-auto max-w-3xl"
@@ -402,6 +409,33 @@ export default function UploadForm() {
                     >
                       <Mic className={cn("h-4 w-4", isRecording && "animate-pulse")} />
                       {isRecording ? `Stop Recording (${formatTime(recordingTime)})` : "Record Audio"}
+                    </Button>
+                  </motion.div>
+                </motion.div>
+
+                {/* Start Call Button */}
+                <motion.div
+                  className="mt-4 w-full"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.4 }}
+                >
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-card px-2 text-muted-foreground">or start a voice call</span>
+                    </div>
+                  </div>
+                  <motion.div className="mt-4" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button
+                      type="button"
+                      onClick={handleStartCall}
+                      className="w-full py-6 text-lg font-medium flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 transition-all"
+                    >
+                      <Phone className="h-5 w-5" />
+                      Start Call
                     </Button>
                   </motion.div>
                 </motion.div>

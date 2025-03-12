@@ -5,6 +5,7 @@ import { PageTransition } from "@/components/page-transition"
 import { AnimatedRouteIndicator } from "@/components/animated-route-indicator"
 import "./globals.css"
 import { Inter } from "next/font/google"
+import Script from "next/script"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -21,6 +22,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Load Ultravox SDK with highest priority */}
+        <Script src="https://cdn.ultravox.ai/sdk/v1/ultravox.js" strategy="beforeInteractive" id="ultravox-sdk" />
+      </head>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <AnimatedRouteIndicator />
